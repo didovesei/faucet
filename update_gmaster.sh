@@ -10,6 +10,7 @@ VFILE=$BASE/$PROJ/GVERSION
 date > $VTEMP
 UPSTREAM=`git rev-parse --abbrev-ref gupdater@{upstream}`
 REPO=${UPSTREAM%/*}
+BRANCHES=gupdater
 
 if [ $0 != $TMP_SH ]; then
     echo Running out of $TMP_SH to mask local churn...
