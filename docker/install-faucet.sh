@@ -16,16 +16,16 @@ ${APK} add -U git ${BUILDDEPS}
 "${dir}/retrycmd.sh" "${PIP3} -r ${FROOT}/requirements.txt"
 ${PIP3} ${FROOT}
 
-if [ "$(uname -m)" = "x86_64" ]; then
-  (
-  echo "Running unit tests"
-  cd "${FROOT}"
-  python3 -m unittest discover "tests/unit/faucet/"
-  python3 -m unittest discover "tests/unit/gauge/"
-  )
-else
-  echo "Skipping tests on $(uname -m) platform"
-fi
+#if [ "$(uname -m)" = "x86_64" ]; then
+#  (
+#  echo "Running unit tests"
+#  cd "${FROOT}"
+#  python3 -m unittest discover "tests/unit/faucet/"
+#  python3 -m unittest discover "tests/unit/gauge/"
+#  )
+#else
+#  echo "Skipping tests on $(uname -m) platform"
+#fi
 
 pip3 uninstall -y ${TESTDEPS} || exit 1
 for i in ${BUILDDEPS} ; do

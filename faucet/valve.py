@@ -168,12 +168,21 @@ class Valve:
         if labels is None:
             labels = self.dp.base_prom_labels()
         metrics_var = getattr(self.metrics, var)
+        self.logger.info(f'** var: {var}, labels: {labels}, metrics_var: {metrics_var}')
+        self.logger.info(f'** var labels: {metrics_var.labels(**labels)}, val: {val}, {type(val)}')
+        self.logger.info(f'** type(metrics_var): {type(metrics_var)}, type(labels): {type(metrics_var.labels(**labels))}')
         metrics_var.labels(**labels).set(val)
+        gauge_var=metrics_var.labels(**labels)
+        try:
+            self.logger.info(f'** value: {gauge_var._value._value}')
+        except Exception as e:
+            self.logger.error(f'** error getting value: {e}')
 
     def _set_port_var(self, var, val, port):
         self._set_var(var, val, labels=self.dp.port_labels(port.number))
 
     def _remove_var(self, var, labels=None):
+        return
         if labels is None:
             labels = self.dp.base_prom_labels()
         metrics_var = getattr(self.metrics, var)
@@ -604,6 +613,7 @@ class Valve:
 
     def fast_state_expire(self, now, other_valves):
         """Called periodically to verify the state of stack ports."""
+        self.logger.info(f'** fast_state_expire')
         if self.dp.lldp_beacon:
             for port in self.dp.ports.values():
                 if port.dyn_lldp_beacon_recv_state:
@@ -813,6 +823,7 @@ class Valve:
         Args:
             pkt_meta (PacketMeta): packet for control plane.
         """
+        self.logger.info(f'handling lldp: pkt_meta.eth_type: {pkt_meta.eth_type}')
         if pkt_meta.eth_type != valve_of.ether.ETH_TYPE_LLDP:
             return {}
         pkt_meta.reparse_all()
@@ -829,25 +840,25 @@ class Valve:
         if port.dyn_lldp_beacon_recv_state != remote_port_state:
             chassis_id = str(self.dp.faucet_dp_mac)
             if remote_port_state:
-                self.logger.info('LLDP on %s, %s from %s (remote %s, port %u) state %s' % (
+                self.logger.info('** LLDP on %s, %s from %s (remote %s, port %u) state %s' % (
                     chassis_id, port, pkt_meta.eth_src, valve_util.dpid_log(remote_dp_id),
                     remote_port_id, port.stack_state_name(remote_port_state)))
             port.dyn_lldp_beacon_recv_state = remote_port_state
 
         peer_mac_src = self.dp.ports[port.number].lldp_peer_mac
         if peer_mac_src and peer_mac_src != pkt_meta.eth_src:
-            self.logger.warning('Unexpected LLDP peer. Received pkt from %s instead of %s' % (
+            self.logger.warning('** Unexpected LLDP peer. Received pkt from %s instead of %s' % (
                 pkt_meta.eth_src, peer_mac_src))
         ofmsgs_by_valve = {}
         if remote_dp_id and remote_port_id:
-            self.logger.debug('FAUCET LLDP on %s from %s (remote %s, port %u)' % (
+            self.logger.info('** FAUCET LLDP on %s from %s (remote %s, port %u)' % (
                 port, pkt_meta.eth_src, valve_util.dpid_log(remote_dp_id), remote_port_id))
             ofmsgs_by_valve.update(self._lldp_manager._verify_lldp(
                 port, now, self, other_valves,
                 remote_dp_id, remote_dp_name,
                 remote_port_id, remote_port_state))
         else:
-            self.logger.debug('LLDP on %s from %s: %s' % (port, pkt_meta.eth_src, str(lldp_pkt)))
+            self.logger.info('** LLDP on %s from %s: %s' % (port, pkt_meta.eth_src, str(lldp_pkt)))
         return ofmsgs_by_valve
 
     @staticmethod

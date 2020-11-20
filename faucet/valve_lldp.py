@@ -81,6 +81,7 @@ class ValveLLDPManager(ValveManagerBase):
         Returns:
             dict: Ofmsgs by valve
         """
+        self.logger.info(f'** port.stack: {port.stack}')
         if not port.stack:
             return {}
         remote_dp = port.stack['dp']
@@ -147,12 +148,14 @@ class ValveLLDPManager(ValveManagerBase):
                     port_up = True
                 for stack_valve in stacked_valves:
                     stack_valve.stack_manager.update_stack_topo(port_up, valve.dp, port)
+        self.logger.info(f'** stack_changes: {stack_changes}, valve.stale_root: {valve.stale_root}')
         if stack_changes or valve.stale_root:
             self.logger.info('%u stack ports changed state, stale root %s' %
                              (stack_changes, valve.stale_root))
             valve.stale_root = False
             notify_dps = {}
             for stack_valve in stacked_valves:
+                self.logger.info(f'** stack_valve.dp.dyn_running: {stack_valve.dp.dyn_running}')
                 if not stack_valve.dp.dyn_running:
                     continue
                 ofmsgs_by_valve[stack_valve].extend(
@@ -165,6 +168,7 @@ class ValveLLDPManager(ValveManagerBase):
                 path_port = stack_valve.stack_manager.default_port_towards(
                     stack_valve.dp.stack.root_name)
                 path_port_number = path_port.number if path_port else 0.0
+                self.logger.info(f'** setting var: {path_port_number}, {stack_valve.dp.base_prom_labels()}')
                 self._set_var(
                     'dp_root_hop_port', path_port_number, labels=stack_valve.dp.base_prom_labels())
                 notify_dps.setdefault(stack_valve.dp.name, {})['root_hop_port'] = path_port_number
